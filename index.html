@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>図書館本探しプログラム</title>
+    <style>
+        body {
+            font-family: 'Hiragino Sans', 'Meiryo', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        
+        .question-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .question {
+            font-size: 1.3em;
+            margin-bottom: 25px;
+            color: #2d3748;
+            font-weight: bold;
+        }
+        
+        .choices {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .choice-btn {
+            background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 200px;
+        }
+        
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .result {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .result h2 {
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        
+        .book-info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .progress {
+            background: #e2e8f0;
+            height: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, #4299e1 0%, #667eea 100%);
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 図書館本探しプログラム</h1>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div id="questionContainer" class="question-container">
+            <div class="question" id="questionText"></div>
+            <div class="choices" id="choicesContainer"></div>
+        </div>
+        
+        <div id="resultContainer" style="display: none;"></div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                id: 1,
+                text: "どのような種類の本をお探しですか？",
+                choices: [
+                    { text: "小説・物語", next: 2 },
+                    { text: "実用書・専門書", next: 10 }
+                ]
+            },
+            {
+                id: 2,
+                text: "どのようなジャンルの小説がお好みですか？",
+                choices: [
+                    { text: "ミステリー・推理小説", next: 3 },
+                    { text: "恋愛・青春小説", next: 6 }
+                ]
+            },
+            {
+                id: 3,
+                text: "どのような雰囲気の作品をお求めですか？",
+                choices: [
+                    { text: "本格的な謎解き", next: 4 },
+                    { text: "サスペンス・スリラー", next: 5 }
+                ]
+            },
+            {
+                id: 4,
+                text: "国内作品と海外作品、どちらがお好みですか？",
+                choices: [
+                    { text: "国内作品", result: "国内本格ミステリー" },
+                    { text: "海外作品", result: "海外本格ミステリー" }
+                ]
+            },
+            {
+                id: 5,
+                text: "どのような設定がお好みですか？",
+                choices: [
+                    { text: "現代日本", result: "現代サスペンス" },
+                    { text: "海外・時代物", result: "海外サスペンス" }
+                ]
+            },
+            {
+                id: 6,
+                text: "どのような恋愛小説がお好みですか？",
+                choices: [
+                    { text: "現代恋愛", next: 7 },
+                    { text: "歴史・時代恋愛", next: 8 }
+                ]
+            },
+            {
+                id: 7,
+                text: "どのような年代の主人公がお好みですか？",
+                choices: [
+                    { text: "学生・若者", result: "青春恋愛小説" },
+                    { text: "大人・社会人", result: "大人の恋愛小説" }
+                ]
+            },
+            {
+                id: 8,
+                text: "どのような時代設定がお好みですか？",
+                choices: [
+                    { text: "日本の歴史", result: "時代恋愛小説" },
+                    { text: "海外の歴史", result: "海外歴史恋愛小説" }
+                ]
+            },
+            {
+                id: 10,
+                text: "どのような分野の実用書をお探しですか？",
+                choices: [
+                    { text: "ビジネス・自己啓発", next: 11 },
+                    { text: "趣味・実用", next: 13 }
+                ]
+            },
+            {
+                id: 11,
+                text: "どのような内容をお求めですか？",
+                choices: [
+                    { text: "スキルアップ・キャリア", next: 12 },
+                    { text: "心理学・人間関係", result: "心理学・人間関係書" }
+                ]
+            },
+            {
+                id: 12,
+                text: "どのようなスキルに興味がありますか？",
+                choices: [
+                    { text: "コミュニケーション・プレゼン", result: "コミュニケーション書" },
+                    { text: "経営・マネジメント", result: "経営・マネジメント書" }
+                ]
+            },
+            {
+                id: 13,
+                text: "どのような趣味分野に興味がありますか？",
+                choices: [
+                    { text: "料理・グルメ", result: "料理・グルメ書" },
+                    { text: "旅行・アウトドア", result: "旅行・アウトドア書" }
+                ]
+            }
+        ];
+
+        const bookRecommendations = {
+            "国内本格ミステリー": {
+                title: "国内本格ミステリー",
+                books: ["東野圭吾『容疑者Xの献身』", "綾辻行人『十角館の殺人』", "米澤穂信『氷菓』"],
+                location: "3階 文学コーナー 913.6",
+                description: "論理的な謎解きが楽しめる国内推理小説"
+            },
+            "海外本格ミステリー": {
+                title: "海外本格ミステリー",
+                books: ["アガサ・クリスティ『そして誰もいなくなった』", "アーサー・コナン・ドイル『シャーロック・ホームズ』", "ジョン・ディクスン・カー『三つの棺』"],
+                location: "3階 外国文学コーナー 933.7",
+                description: "古典から現代まで、世界の名作推理小説"
+            },
+            "現代サスペンス": {
+                title: "現代サスペンス",
+                books: ["湊かなえ『告白』", "真梨幸子『孤虫症』", "貴志祐介『悪の教典』"],
+                location: "3階 文学コーナー 913.6",
+                description: "現代日本を舞台にしたスリリングな作品"
+            },
+            "海外サスペンス": {
+                title: "海外サスペンス",
+                books: ["ギリアン・フリン『ゴーン・ガール』", "ダン・ブラウン『ダ・ヴィンチ・コード』", "ステファン・キング『シャイニング』"],
+                location: "3階 外国文学コーナー 933.7",
+                description: "海外の話題作サスペンス小説"
+            },
+            "青春恋愛小説": {
+                title: "青春恋愛小説",
+                books: ["有川浩『図書館戦争』", "新海誠『君の名は。』", "住野よる『君の膵臓をたべたい』"],
+                location: "3階 文学コーナー 913.6",
+                description: "青春時代の甘酸っぱい恋愛を描いた作品"
+            },
+            "大人の恋愛小説": {
+                title: "大人の恋愛小説",
+                books: ["山田詠美『ぼくは勉強ができない』", "江國香織『きらきらひかる』", "角田光代『対岸の彼女』"],
+                location: "3階 文学コーナー 913.6",
+                description: "大人の複雑な恋愛関係を描いた作品"
+            },
+            "時代恋愛小説": {
+                title: "時代恋愛小説",
+                books: ["葉室麟『蜩ノ記』", "畠中恵『しゃばけ』", "諸田玲子『四季 奈津子』"],
+                location: "3階 文学コーナー 913.6",
+                description: "江戸時代から明治時代の恋愛を描いた作品"
+            },
+            "海外歴史恋愛小説": {
+                title: "海外歴史恋愛小説",
+                books: ["ダイアナ・ガバルドン『時の彼方の恋人』", "フィリッパ・グレゴリー『ブーリン家の姉妹』", "ケン・フォレット『大聖堂』"],
+                location: "3階 外国文学コーナー 933.7",
+                description: "ヨーロッパの歴史を背景にした恋愛小説"
+            },
+            "心理学・人間関係書": {
+                title: "心理学・人間関係書",
+                books: ["デール・カーネギー『人を動かす』", "アドラー『嫌われる勇気』", "ダニエル・ゴールマン『EQ』"],
+                location: "2階 心理学コーナー 140",
+                description: "人間関係を良くするための心理学書"
+            },
+            "コミュニケーション書": {
+                title: "コミュニケーション・プレゼン書",
+                books: ["ナンシー・デュアルテ『スライド・ology』", "カーマイン・ガロ『スティーブ・ジョブズ 驚異のプレゼン』", "メラビアン『非言語コミュニケーション』"],
+                location: "2階 経営学コーナー 336",
+                description: "プレゼンテーション技術とコミュニケーション術"
+            },
+            "経営・マネジメント書": {
+                title: "経営・マネジメント書",
+                books: ["ピーター・ドラッカー『マネジメント』", "ジム・コリンズ『ビジョナリーカンパニー』", "トヨタ生産方式『カイゼン』"],
+                location: "2階 経営学コーナー 335",
+                description: "経営戦略とマネジメント手法"
+            },
+            "料理・グルメ書": {
+                title: "料理・グルメ書",
+                books: ["土井善晴『一汁一菜でよいという提案』", "栗原はるみ『ごちそうさまが、ききたくて。』", "辰巳芳子『いのちを養う食事』"],
+                location: "1階 生活実用コーナー 596",
+                description: "料理レシピと食文化に関する本"
+            },
+            "旅行・アウトドア書": {
+                title: "旅行・アウトドア書",
+                books: ["地球の歩き方編集室『地球の歩き方』", "高橋庄太郎『山道具 選び方、使い方』", "植村直己『青春を山に賭けて』"],
+                location: "1階 旅行・地理コーナー 290",
+                description: "旅行ガイドとアウトドア活動の参考書"
+            }
+        };
+
+        let currentQuestion = 1;
+        let questionPath = [];
+        let totalQuestions = 0;
+
+        function calculateTotalQuestions() {
+            const paths = [
+                [1, 2, 3, 4], [1, 2, 3, 5], [1, 2, 6, 7], [1, 2, 6, 8],
+                [1, 10, 11, 12], [1, 10, 11], [1, 10, 13]
+            ];
+            return Math.max(...paths.map(path => path.length));
+        }
+
+        function updateProgress() {
+            const progress = (questionPath.length / totalQuestions) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        function displayQuestion(questionId) {
+            const question = questions.find(q => q.id === questionId);
+            if (!question) return;
+
+            document.getElementById('questionText').textContent = question.text;
+            
+            const choicesContainer = document.getElementById('choicesContainer');
+            choicesContainer.innerHTML = '';
+            
+            question.choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = choice.text;
+                button.onclick = () => handleChoice(choice);
+                choicesContainer.appendChild(button);
+            });
+
+            updateProgress();
+        }
+
+        function handleChoice(choice) {
+            questionPath.push(currentQuestion);
+            
+            if (choice.result) {
+                showResult(choice.result);
+            } else {
+                currentQuestion = choice.next;
+                displayQuestion(currentQuestion);
+            }
+        }
+
+        function showResult(resultKey) {
+            const recommendation = bookRecommendations[resultKey];
+            const questionContainer = document.getElementById('questionContainer');
+            const resultContainer = document.getElementById('resultContainer');
+            const progressBar = document.getElementById('progressBar');
+            
+            progressBar.style.width = '100%';
+            questionContainer.style.display = 'none';
+            resultContainer.style.display = 'block';
+            
+            resultContainer.innerHTML = `
+                <div class="result">
+                    <h2>📖 おすすめの本が見つかりました！</h2>
+                    <div class="book-info">
+                        <h3>${recommendation.title}</h3>
+                        <p><strong>場所:</strong> ${recommendation.location}</p>
+                        <p><strong>説明:</strong> ${recommendation.description}</p>
+                        <p><strong>おすすめの本:</strong></p>
+                        <ul style="text-align: left; margin: 10px 0;">
+                            ${recommendation.books.map(book => `<li>${book}</li>`).join('')}
+                        </ul>
+                    </div>
+                    <button class="restart-btn" onclick="restart()">もう一度探す</button>
+                </div>
+            `;
+        }
+
+        function restart() {
+            currentQuestion = 1;
+            questionPath = [];
+            document.getElementById('questionContainer').style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+            document.getElementById('progressBar').style.width = '0%';
+            displayQuestion(currentQuestion);
+        }
+
+        // 初期化
+        totalQuestions = calculateTotalQuestions();
+        displayQuestion(currentQuestion);
+    </script>
+</body>
+</html>
